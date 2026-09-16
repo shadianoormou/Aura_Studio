@@ -68,7 +68,7 @@ export default function Home() {
       if (event.key === "Escape") dismissMenu();
     };
     const dismissOnDesktop = () => {
-      if (window.innerWidth > 640) dismissMenu();
+      if (window.innerWidth > 760) dismissMenu();
     };
 
     window.addEventListener("hashchange", dismissMenu);
@@ -100,7 +100,7 @@ export default function Home() {
       {menuOpen && <button type="button" className="nav-scrim" aria-label="Close navigation menu" onClick={() => setMenuOpen(false)} />}
       <header className="nav-wrap">
         <nav className="nav" aria-label="Main navigation">
-          <a href="#top" className="wordmark" aria-label="Aura Studio home">AURA<span>°</span></a>
+          <a href="#top" className="wordmark" aria-label="Aura Studio home">AURA<span>STUDIO</span></a>
           <button className="nav-toggle" aria-expanded={menuOpen} aria-controls="main-links" onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? "Close" : "Menu"}</button>
           <div className={menuOpen ? "nav-links is-open" : "nav-links"} id="main-links">
             <a href="#about" onClick={() => setMenuOpen(false)}>About</a><a href="#portfolio" onClick={() => setMenuOpen(false)}>Work</a><a href="#services" onClick={() => setMenuOpen(false)}>Services</a><a href="#results" onClick={() => setMenuOpen(false)}>Results</a><a href="#contact" onClick={() => setMenuOpen(false)}>Contact</a>
@@ -111,18 +111,15 @@ export default function Home() {
 
       <section className="hero" id="top">
         <div className="hero-copy reveal">
-          <p className="eyebrow"><i /> Available for selected brand collaborations</p>
-          <h1>Content that feels <em>real.</em><br />Results that feel <span>unreal.</span></h1>
-          <p className="hero-text">Creator-led short-form for beauty, fashion, lifestyle and wellness brands that want to be remembered — and chosen.</p>
+          <p className="eyebrow">UGC creator · beauty, wellness &amp; lifestyle</p>
+          <h1>Content people<br /><em>stop for.</em></h1>
+          <p className="hero-text">Thoughtful short-form video for brands that want to look considered, sound clear and earn attention without shouting for it.</p>
           <div className="hero-actions"><a className="button" href="#portfolio">View my work <Arrow /></a><a className="text-link" href="#contact">Let’s work together <Arrow diagonal /></a></div>
-          <div className="hero-proof"><div className="avatar-stack"><b>A</b><b>U</b><b>R</b><b>°</b></div><p>Built for <strong>thoughtful brand partnerships</strong><br />across beauty, lifestyle &amp; wellness.</p></div>
+          <div className="hero-proof"><p><strong>UK-based creative partner.</strong><br />Available for selected collaborations worldwide.</p></div>
         </div>
         <div className="hero-art" aria-label="Creator filming a beauty review">
-          <div className="hero-orbit orbit-one" /><div className="hero-orbit orbit-two" />
           <div className="hero-device"><img src="/assets/aura-hero.png" alt="Creator recording a skincare review" /><div className="rec-dot" /><div className="device-caption"><span>UGC / 01</span><b>Beauty in motion</b></div></div>
-          <aside className="floating-card brief-card"><span className="mini-label">CAMPAIGN NOTE</span><b>Make it feel<br />like a friend’s<br /><em>favourite find.</em></b><span className="spark">✦</span></aside>
-          <aside className="floating-card insight-card"><span className="mini-label">CREATIVE ENERGY</span><div><b>01</b><span>native<br />social</span></div><div className="bar"><i /></div></aside>
-          <span className="scroll-note">SCROLL TO EXPLORE <i /></span>
+          <span className="scroll-note">SELECTED WORK <i /></span>
         </div>
       </section>
 
