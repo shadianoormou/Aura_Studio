@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1789539527904,
+      "tag": "0000_omniscient_moonstone",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789539547910,
+      "tag": "0001_sudden_karma",
+      "breakpoints": true
+    }
+  ]
+}

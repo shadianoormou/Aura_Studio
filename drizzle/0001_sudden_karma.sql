@@ -1,0 +1,2 @@
+CREATE INDEX `idx_contact_inquiries_status_created_at` ON `contact_inquiries` (`status`,`created_at`);--> statement-breakpoint
+CREATE INDEX `idx_content_records_type_status_position` ON `content_records` (`type`,`status`,`position`);
