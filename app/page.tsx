@@ -83,6 +83,46 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    const motionTargets = Array.from(document.querySelectorAll<HTMLElement>(
+      ".hero-copy, .hero-art, .section-head, .work-card, .about-art, .about-copy, .results-header, .case-study, .service-card, .package-callout, .process-heading, .process-list, .testimonial, .kit-card, .feed-grid a, .faq-list, .contact-copy, .inquiry-form"
+    ));
+    motionTargets.forEach((element, index) => {
+      element.classList.add("motion-reveal");
+      element.style.setProperty("--motion-delay", `${Math.min(index * 35, 280)}ms`);
+    });
+    body.classList.add("motion-ready");
+
+    const observer = "IntersectionObserver" in window
+      ? new IntersectionObserver((entries) => entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer?.unobserve(entry.target);
+          }
+        }), { threshold: 0.12, rootMargin: "0px 0px -7%" })
+      : null;
+    if (observer) motionTargets.forEach((element) => observer.observe(element));
+    else motionTargets.forEach((element) => element.classList.add("is-visible"));
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (!window.matchMedia("(pointer:fine)").matches) return;
+      const x = (event.clientX / window.innerWidth - 0.5) * 2;
+      const y = (event.clientY / window.innerHeight - 0.5) * 2;
+      root.style.setProperty("--pointer-x", x.toFixed(3));
+      root.style.setProperty("--pointer-y", y.toFixed(3));
+    };
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("pointermove", onPointerMove);
+      body.classList.remove("motion-ready");
+      root.style.removeProperty("--pointer-x");
+      root.style.removeProperty("--pointer-y");
+    };
+  }, []);
+
   const visibleWork = useMemo(() => filter === "All" ? work : work.filter((item) => item.category === filter || item.format === filter), [filter, work]);
 
   function submitInquiry(event: FormEvent<HTMLFormElement>) {
