@@ -93,7 +93,7 @@ export default function Home() {
           <h1>Content that feels <em>real.</em><br />Results that feel <span>unreal.</span></h1>
           <p className="hero-text">Creator-led short-form for beauty, fashion, lifestyle and wellness brands that want to be remembered — and chosen.</p>
           <div className="hero-actions"><a className="button" href="#portfolio">View my work <Arrow /></a><a className="text-link" href="#contact">Let’s work together <Arrow diagonal /></a></div>
-          <div className="hero-proof"><div className="avatar-stack"><b>A</b><b>M</b><b>R</b><b>+</b></div><p>Trusted by <strong>30+ thoughtful brands</strong><br />across beauty, lifestyle &amp; wellness.</p></div>
+          <div className="hero-proof"><div className="avatar-stack"><b>A</b><b>U</b><b>R</b><b>°</b></div><p>Built for <strong>thoughtful brand partnerships</strong><br />across beauty, lifestyle &amp; wellness.</p></div>
         </div>
         <div className="hero-art" aria-label="Creator filming a beauty review">
           <div className="hero-orbit orbit-one" /><div className="hero-orbit orbit-two" />
@@ -104,7 +104,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="stats-section section-pad" aria-label="Creator stats"><div className="stat-grid"><div><strong>30<span>+</span></strong><p>brand collaborations</p></div><div><strong>100<span>+</span></strong><p>content moments made</p></div><div><strong>4.9<span>/5</span></strong><p>client satisfaction</p></div><div><strong>UK<span>↗</span></strong><p>available worldwide</p></div></div></section>
+      <section className="stats-section section-pad" aria-label="Creator stats"><div className="stat-grid"><div><strong>—</strong><p>brand collaborations <small>add in CMS</small></p></div><div><strong>—</strong><p>organic views <small>add in CMS</small></p></div><div><strong>—</strong><p>content moments made <small>add in CMS</small></p></div><div><strong>UK<span>↗</span></strong><p>available worldwide</p></div></div></section>
 
       <section className="marquee-section" aria-label="Collaboration styles"><p>Beauty &nbsp; · &nbsp; Skincare &nbsp; · &nbsp; Fashion &nbsp; · &nbsp; Wellness &nbsp; · &nbsp; Lifestyle &nbsp; · &nbsp; Beauty &nbsp; · &nbsp; Skincare &nbsp; · &nbsp; Fashion &nbsp; · &nbsp; Wellness &nbsp; · &nbsp; Lifestyle</p></section>
 
@@ -123,6 +123,10 @@ export default function Home() {
       <section className="process section-pad"><div className="process-heading"><p className="eyebrow">A smooth process</p><h2>Clear from<br /><em>first hello</em> to final file.</h2></div><ol className="process-list"><li><b>01</b><span>Inquiry</span><p>Goals, deliverables and fit.</p></li><li><b>02</b><span>Creative direction</span><p>Hooks, concept and shot plan.</p></li><li><b>03</b><span>Production</span><p>Thoughtful filming and editing.</p></li><li><b>04</b><span>Delivery</span><p>Review-ready files, beautifully organised.</p></li></ol></section>
 
       <section className="testimonial section-pad"><div className="quote-mark">“</div><blockquote>“Aura took a dense brief and made it feel completely <em>human.</em> Every frame was intentional, but none of it felt over-produced.”</blockquote><div className="quote-by"><span>Client quote placeholder</span><b>Beauty brand / paid social</b></div><div className="quote-progress"><i /><i /><i /></div></section>
+
+      <section className="media-kit section-pad"><div className="kit-card"><div><p className="eyebrow">The media kit</p><h2>Everything your team needs, in one <em>beautiful</em> place.</h2><p>Audience details, current platform insights, collaboration formats and a clear way to get in touch — updated from the CMS when your final kit is ready.</p><a className="button" href="#contact">Request media kit <Arrow /></a></div><aside><span>CREATOR<br />PROFILE</span><b>AURA<span>°</span></b><small>Beauty · Lifestyle · Wellness<br />UK / available worldwide</small><i>✦</i></aside></div></section>
+
+      <section className="social-feed section-pad"><div className="section-head"><div><p className="eyebrow">From the studio</p><h2>Follow the<br /><em>creative process.</em></h2></div><p>Fresh campaign frames, behind-the-scenes notes and ideas in motion. Link your channels in the CMS when you are ready to share.</p></div><div className="feed-grid"><a href="#contact"><span className="feed-number">01</span><b>Behind the camera</b><small>Studio note</small></a><a href="#contact"><span className="feed-number">02</span><b>New campaign energy</b><small>Creative direction</small></a><a href="#contact"><span className="feed-number">03</span><b>The little details</b><small>Process</small></a></div><div className="social-actions"><a className="outline-button" href="#contact">Instagram <Arrow diagonal /></a><a className="outline-button" href="#contact">TikTok <Arrow diagonal /></a><a className="outline-button" href="#contact">YouTube <Arrow diagonal /></a></div></section>
 
       <section className="faq section-pad" id="faq"><div className="section-head"><div><p className="eyebrow">Good to know</p><h2>Your questions,<br /><em>answered.</em></h2></div><p>Need something not covered here? I’m happy to talk through the details before we build a brief.</p></div><div className="faq-list">{faq.map(([question, answer], index) => <article key={question} className={openFaq === index ? "faq-item open" : "faq-item"}><button onClick={() => setOpenFaq(openFaq === index ? null : index)} aria-expanded={openFaq === index}><span>{question}</span><b>{openFaq === index ? "−" : "+"}</b></button><div><p>{answer}</p></div></article>)}</div></section>
 
