@@ -192,9 +192,11 @@ body.aura-site footer { background:#30152b; }.wordmark~div a { color:#f2d9e6; }
 
 /* Avoid horizontal bleed from decorative glow fields; retain a clean mobile canvas. */
 html { overflow-x:hidden; }
-body.aura-site { overflow-x:hidden; }
+body.aura-site { overflow-x:clip; }
+body.aura-site #top { scroll-margin-top:96px; }
 body.aura-site .hero h1 { letter-spacing:-.055em; word-spacing:.035em; }
 body.aura-site .nav-links { color:#3d2937; }
+body.aura-site .nav-links a { color:#48243b; font-weight:600; }
 body.aura-site .filter-row { width:100%; max-width:100%; }
 @media (max-width:760px) {
   body.aura-site .hero { grid-template-columns:1fr; }
