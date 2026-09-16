@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Shadia Creates — UGC creator in Bangladesh",
-  description: "Creator-led short-form UGC content for beauty, fashion, wellness and lifestyle brands from Rajshahi, Bangladesh.",
+  title: "Aura Studio — UGC creator & creative partner",
+  description: "Creator-led short-form UGC content for beauty, fashion, wellness and lifestyle brands from Bangladesh.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
