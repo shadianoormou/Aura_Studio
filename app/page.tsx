@@ -104,7 +104,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="stats-section section-pad" aria-label="Creator stats"><div className="stat-grid"><div><strong>—</strong><p>brand collaborations <small>add in CMS</small></p></div><div><strong>—</strong><p>organic views <small>add in CMS</small></p></div><div><strong>—</strong><p>content moments made <small>add in CMS</small></p></div><div><strong>UK<span>↗</span></strong><p>available worldwide</p></div></div></section>
+      <section className="stats-section section-pad" aria-label="Studio principles"><div className="stat-grid"><div><strong>Native</strong><p>social-first storytelling</p></div><div><strong>Intentional</strong><p>creative direction, always</p></div><div><strong>Polished</strong><p>edit-ready delivery</p></div><div><strong>UK<span>↗</span></strong><p>available worldwide</p></div></div></section>
 
       <section className="marquee-section" aria-label="Collaboration styles"><p>Beauty &nbsp; · &nbsp; Skincare &nbsp; · &nbsp; Fashion &nbsp; · &nbsp; Wellness &nbsp; · &nbsp; Lifestyle &nbsp; · &nbsp; Beauty &nbsp; · &nbsp; Skincare &nbsp; · &nbsp; Fashion &nbsp; · &nbsp; Wellness &nbsp; · &nbsp; Lifestyle</p></section>
 
