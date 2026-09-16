@@ -62,6 +62,27 @@ export default function Home() {
     return () => document.body.classList.remove("aura-site");
   }, []);
 
+  useEffect(() => {
+    const dismissMenu = () => setMenuOpen(false);
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismissMenu();
+    };
+    const dismissOnDesktop = () => {
+      if (window.innerWidth > 640) dismissMenu();
+    };
+
+    window.addEventListener("hashchange", dismissMenu);
+    window.addEventListener("scroll", dismissMenu, { passive: true });
+    window.addEventListener("keydown", dismissOnEscape);
+    window.addEventListener("resize", dismissOnDesktop);
+    return () => {
+      window.removeEventListener("hashchange", dismissMenu);
+      window.removeEventListener("scroll", dismissMenu);
+      window.removeEventListener("keydown", dismissOnEscape);
+      window.removeEventListener("resize", dismissOnDesktop);
+    };
+  }, []);
+
   const visibleWork = useMemo(() => filter === "All" ? work : work.filter((item) => item.category === filter || item.format === filter), [filter, work]);
 
   function submitInquiry(event: FormEvent<HTMLFormElement>) {
@@ -76,10 +97,11 @@ export default function Home() {
     <main id="content">
       <a className="skip-link" href="#content">Skip to content</a>
       <div className="ambient ambient-one" /><div className="ambient ambient-two" />
+      {menuOpen && <button type="button" className="nav-scrim" aria-label="Close navigation menu" onClick={() => setMenuOpen(false)} />}
       <header className="nav-wrap">
         <nav className="nav" aria-label="Main navigation">
           <a href="#top" className="wordmark" aria-label="Aura Studio home">AURA<span>°</span></a>
-          <button className="nav-toggle" aria-expanded={menuOpen} aria-controls="main-links" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "Close" : "Menu"}</button>
+          <button className="nav-toggle" aria-expanded={menuOpen} aria-controls="main-links" onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? "Close" : "Menu"}</button>
           <div className={menuOpen ? "nav-links is-open" : "nav-links"} id="main-links">
             <a href="#about" onClick={() => setMenuOpen(false)}>About</a><a href="#portfolio" onClick={() => setMenuOpen(false)}>Work</a><a href="#services" onClick={() => setMenuOpen(false)}>Services</a><a href="#results" onClick={() => setMenuOpen(false)}>Results</a><a href="#contact" onClick={() => setMenuOpen(false)}>Contact</a>
           </div>
