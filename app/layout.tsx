@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Aura Studio — UGC creator & creative partner",
-  description: "Creator-led short-form content for thoughtful beauty, lifestyle and wellness brands.",
+  title: "Shadia Creates — UGC creator in Bangladesh",
+  description: "Creator-led short-form UGC content for beauty, fashion, wellness and lifestyle brands from Rajshahi, Bangladesh.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
@@ -22,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-GB">
+    <html lang="en">
       <body className="antialiased">{children}</body>
     </html>
   );
