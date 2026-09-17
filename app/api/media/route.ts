@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { hasAdminSession } from "../../admin-auth";
 
-async function canManage() { const user = await getChatGPTUser(); const emails = (env.ADMIN_EMAILS ?? "").split(",").map((email) => email.trim().toLowerCase()); return !!user && (user.email.endsWith("@sites.test") || emails.includes(user.email.toLowerCase())); }
+async function canManage() { return hasAdminSession(); }
 const accepted = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "video/mp4", "video/webm", "application/pdf"]);
 
 export async function POST(request: Request) {

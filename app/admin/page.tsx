@@ -1,9 +1,10 @@
-import { requireChatGPTUser } from "../chatgpt-auth";
+import { hasAdminSession } from "../admin-auth";
 import AdminDashboard from "./AdminDashboard";
+import AdminPinGate from "./AdminPinGate";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const user = await requireChatGPTUser("/admin");
-  return <AdminDashboard email={user.email} name={user.displayName} />;
+  if (!(await hasAdminSession())) return <AdminPinGate />;
+  return <AdminDashboard email="Owner access" name="Studio admin" />;
 }

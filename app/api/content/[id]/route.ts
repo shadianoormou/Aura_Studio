@@ -1,8 +1,8 @@
 import { env } from "cloudflare:workers";
-import { getChatGPTUser } from "../../../chatgpt-auth";
+import { hasAdminSession } from "../../../admin-auth";
 
 function json(value: unknown, status = 200) { return Response.json(value, { status, headers: { "cache-control": "no-store" } }); }
-async function canManage() { const user = await getChatGPTUser(); const emails = (env.ADMIN_EMAILS ?? "").split(",").map((email) => email.trim().toLowerCase()); return !!user && (user.email.endsWith("@sites.test") || emails.includes(user.email.toLowerCase())); }
+async function canManage() { return hasAdminSession(); }
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   if (!(await canManage())) return json({ error: "Administrator access required" }, 403);

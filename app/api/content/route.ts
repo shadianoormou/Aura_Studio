@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { hasAdminSession } from "../../admin-auth";
 
 type RecordPayload = { id?: string; type?: string; title?: string; status?: string; position?: number; slug?: string; data?: unknown };
 
@@ -10,11 +10,7 @@ function parseData(value: string) { try { return JSON.parse(value); } catch { re
 function normalise(row: Record<string, unknown>) { return { ...row, data: parseData(String(row.data ?? "{}")) }; }
 
 async function adminAllowed() {
-  const user = await getChatGPTUser();
-  if (!user) return false;
-  const allowed = (env.ADMIN_EMAILS ?? "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean);
-  // The local preview account is allowed only outside production so the CMS can be tested without a real address.
-  return user.email.endsWith("@sites.test") || allowed.includes(user.email.toLowerCase());
+  return hasAdminSession();
 }
 
 export async function GET(request: Request) {
