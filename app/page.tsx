@@ -55,6 +55,14 @@ function embedVideoUrl(value: string) {
       const id = url.pathname.match(/\/(?:video\/)?(\d+)/)?.[1];
       return id ? `https://player.vimeo.com/video/${id}` : null;
     }
+    if (host === "drive.google.com") {
+      const id = url.pathname.match(/\/file\/d\/([^/]+)/)?.[1] || url.searchParams.get("id");
+      return id ? `https://drive.google.com/file/d/${encodeURIComponent(id)}/preview` : null;
+    }
+    if (host === "instagram.com") {
+      const match = url.pathname.match(/^\/(p|reel|tv)\/([^/]+)/);
+      return match ? `https://www.instagram.com/${match[1]}/${match[2]}/embed` : null;
+    }
   } catch { return null; }
   return null;
 }

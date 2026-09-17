@@ -15,6 +15,33 @@ const sampleItems: Item[] = [
 const nav = ["Overview", "Portfolio", "Case studies", "Brands", "Testimonials", "Inquiries", "Media library", "Site settings"];
 const maxUploadBytes = 20 * 1024 * 1024;
 
+function driveFileId(value: string) {
+  try {
+    const url = new URL(value);
+    if (!url.hostname.endsWith("google.com") && !url.hostname.endsWith("googleusercontent.com")) return null;
+    return url.pathname.match(/\/file\/d\/([^/]+)/)?.[1] || url.searchParams.get("id");
+  } catch { return null; }
+}
+
+function driveImageUrl(value: string) {
+  const id = driveFileId(value);
+  return id ? `https://drive.google.com/uc?export=view&id=${encodeURIComponent(id)}` : null;
+}
+
+function driveVideoUrl(value: string) {
+  const id = driveFileId(value);
+  return id ? `https://drive.google.com/file/d/${encodeURIComponent(id)}/preview` : null;
+}
+
+function instagramPostUrl(value: string) {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.replace(/^www\./, "");
+    const match = url.pathname.match(/^\/(p|reel|tv)\/([^/]+)/);
+    return host === "instagram.com" && match ? `https://www.instagram.com/${match[1]}/${match[2]}/` : null;
+  } catch { return null; }
+}
+
 export default function AdminDashboard({ email, name }: { email: string; name: string }) {
   const [tab, setTab] = useState("Overview");
   const [items, setItems] = useState<Item[]>(sampleItems);
@@ -73,14 +100,23 @@ export default function AdminDashboard({ email, name }: { email: string; name: s
     try {
       let image = String(data.get("image") ?? "").trim();
       let video = String(data.get("video") ?? "").trim();
+      const imageSource = String(data.get("imageSource") ?? "url");
+      const videoSource = String(data.get("videoSource") ?? "none");
       const imageFile = data.get("imageFile");
       const videoFile = data.get("videoFile");
-      if (imageFile instanceof File && imageFile.size) image = await uploadMedia(imageFile);
-      if (videoFile instanceof File && videoFile.size) video = await uploadMedia(videoFile);
+      if (imageSource === "phone" && imageFile instanceof File && imageFile.size) image = await uploadMedia(imageFile);
+      if (imageSource === "drive") image = driveImageUrl(image) ?? "";
+      if (videoSource === "none") video = "";
+      if (videoSource === "phone" && videoFile instanceof File && videoFile.size) video = await uploadMedia(videoFile);
+      if (videoSource === "drive") video = driveVideoUrl(video) ?? "";
+      if (videoSource === "instagram") video = instagramPostUrl(video) ?? "";
       if (!image) throw new Error("Add a cover image or choose an image file.");
+      if (imageSource === "drive" && !image) throw new Error("Paste a Google Drive file link for the cover image.");
       if (video) {
         try { new URL(video); } catch { throw new Error("Video link must start with https://"); }
       }
+      if (videoSource === "drive" && !video) throw new Error("Paste a Google Drive file link for the video.");
+      if (videoSource === "instagram" && !video) throw new Error("Use a public Instagram post, reel or TV link—not a profile link.");
       const item: Item = {
         id: crypto.randomUUID(),
         title: String(data.get("title") ?? "").trim(),
@@ -142,7 +178,7 @@ export default function AdminDashboard({ email, name }: { email: string; name: s
       {notice && <div className="cms-notice" role="status"><b>Update</b><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
       {tab === "Overview" ? <><div className="cms-metrics"><Metric value={items.length} label="Portfolio videos" note="Content library"/><Metric value={items.filter((item) => item.status === "published").length} label="Published projects" note="Live on website"/><Metric value="—" label="New inquiries" note="Secure database"/><Metric value={media.length || "—"} label="Media assets" note="Images and videos"/></div><div className="cms-panels"><section className="cms-panel wide"><div className="panel-title"><div><span className="cms-kicker">Portfolio status</span><h2>Recent content</h2></div><button onClick={() => setTab("Portfolio")}>Manage all →</button></div><PortfolioTable items={items.slice(0, 4)} onStatus={updateStatus}/></section><section className="cms-panel"><div className="panel-title"><div><span className="cms-kicker">Quick actions</span><h2>Keep moving</h2></div></div><div className="quick-actions"><button onClick={() => setModal(true)}>↗ <span>Add new video</span></button><button onClick={() => setTab("Media library")}>▣ <span>Upload media</span></button><button onClick={() => setTab("Inquiries")}>✦ <span>Review inquiries</span></button><button onClick={() => setTab("Site settings")}>⚙ <span>Update site settings</span></button></div></section></div></> : tab === "Portfolio" ? <section className="cms-panel"><div className="panel-title"><div><span className="cms-kicker">All work</span><h2>Portfolio items</h2></div><button className="cms-primary" onClick={() => setModal(true)}>+ Add item</button></div><div className="cms-filter"><input placeholder="Search title, brand or category…" aria-label="Search portfolio" value={search} onChange={(event) => setSearch(event.target.value)}/><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">All statuses</option><option value="published">Published</option><option value="draft">Draft</option><option value="unpublished">Unpublished</option></select></div>{loading ? <p className="cms-empty">Loading content…</p> : filteredItems.length ? <PortfolioTable items={filteredItems} onStatus={updateStatus}/> : <p className="cms-empty">No matching portfolio items.</p>}</section> : tab === "Media library" ? <MediaLibrary assets={media} loading={mediaLoading} onUpload={handleLibraryUpload} onCopy={copyUrl}/> : <section className="cms-panel empty-state"><span>✦</span><h2>{tab} is ready for your content.</h2><p>Add portfolio work from the button above. Drafts stay private until you publish them.</p><button className="cms-primary" onClick={() => setModal(true)}>Create content</button></section>}
     </section>
-    {modal && <div className="cms-modal" role="dialog" aria-modal="true" aria-label="Add portfolio item"><form onSubmit={createItem}><button type="button" className="cms-close" onClick={() => setModal(false)}>×</button><span className="cms-kicker">New portfolio item</span><h2>Add a beautiful new moment.</h2><label>Title<input name="title" required placeholder="e.g. The glow-up edit" /></label><label>Brand<input name="brand" required placeholder="Brand or client" /></label><div className="cms-two"><label>Category<select name="category" defaultValue="Beauty"><option>Beauty</option><option>Skincare</option><option>Fashion</option><option>Lifestyle</option><option>Wellness</option></select></label><label>Format<select name="format" defaultValue="Product Demo"><option>Product Demo</option><option>Unboxing</option><option>Testimonial</option><option>Voiceover</option><option>Aesthetic B-roll</option><option>Try-on</option></select></label></div><label>Cover image URL<input name="image" type="url" placeholder="https://…" /><span className="field-hint">Or upload an image from your device</span><input name="imageFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /></label><label>Video link <span className="field-hint">Direct MP4/WebM, YouTube or Vimeo</span><input name="video" type="url" placeholder="https://…" /><span className="field-hint">Or upload a video (max 20 MB)</span><input name="videoFile" type="file" accept="video/mp4,video/webm" /></label><label>Publishing status<select name="status" defaultValue="draft"><option value="draft">Save as draft</option><option value="published">Publish now</option></select></label><button className="cms-primary" disabled={saving} type="submit">{saving ? "Saving…" : "Save portfolio item →"}</button></form></div>}
+    {modal && <div className="cms-modal" role="dialog" aria-modal="true" aria-label="Add portfolio item"><form onSubmit={createItem}><button type="button" className="cms-close" onClick={() => setModal(false)}>×</button><span className="cms-kicker">New portfolio item</span><h2>Add a beautiful new moment.</h2><label>Title<input name="title" required placeholder="e.g. The glow-up edit" /></label><label>Brand<input name="brand" required placeholder="Brand or client" /></label><div className="cms-two"><label>Category<select name="category" defaultValue="Beauty"><option>Beauty</option><option>Skincare</option><option>Fashion</option><option>Lifestyle</option><option>Wellness</option></select></label><label>Format<select name="format" defaultValue="Product Demo"><option>Product Demo</option><option>Unboxing</option><option>Testimonial</option><option>Voiceover</option><option>Aesthetic B-roll</option><option>Try-on</option></select></label></div><label>Cover image source<select name="imageSource" defaultValue="phone"><option value="phone">Upload from phone</option><option value="url">Image URL</option><option value="drive">Google Drive link</option></select><input name="image" type="text" placeholder="Paste image URL or Drive link" /><input name="imageFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /><span className="field-hint">Phone: choose a JPG, PNG, WebP or AVIF file. Drive: set sharing to “Anyone with the link”.</span></label><label>Video source<select name="videoSource" defaultValue="none"><option value="none">No video</option><option value="phone">Upload from phone</option><option value="url">Direct / YouTube / Vimeo URL</option><option value="drive">Google Drive link</option><option value="instagram">Instagram post or reel URL</option></select><input name="video" type="text" placeholder="Paste the selected source link" /><input name="videoFile" type="file" accept="video/mp4,video/webm" /><span className="field-hint">Instagram must be a public post/reel/TV link (not a profile or story). Videos up to 20 MB.</span></label><label>Publishing status<select name="status" defaultValue="draft"><option value="draft">Save as draft</option><option value="published">Publish now</option></select></label><button className="cms-primary" disabled={saving} type="submit">{saving ? "Saving…" : "Save portfolio item →"}</button></form></div>}
   </main>;
 }
 
