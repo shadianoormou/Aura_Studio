@@ -112,6 +112,9 @@ export default function AdminDashboard({ email, name }: { email: string; name: s
       if (videoSource === "instagram") video = instagramPostUrl(video) ?? "";
       if (!image) throw new Error("Add a cover image or choose an image file.");
       if (imageSource === "drive" && !image) throw new Error("Paste a Google Drive file link for the cover image.");
+      if (image && imageSource !== "phone") {
+        try { new URL(image); } catch { throw new Error("Cover image link must start with https://"); }
+      }
       if (video) {
         try { new URL(video); } catch { throw new Error("Video link must start with https://"); }
       }
