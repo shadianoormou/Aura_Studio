@@ -3,7 +3,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 
-type Item = { id: string; title: string; status: string; position: number; data: { brand?: string; category?: string; format?: string; image?: string } };
+type ItemData = { brand?: string; category?: string; format?: string; image?: string; video?: string };
+type Item = { id: string; title: string; status: string; position: number; data: ItemData };
+type MediaAsset = { id: string; key: string; filename: string; contentType: string; byteSize: number; createdAt: string; url: string };
 
 const sampleItems: Item[] = [
   { id: "demo-1", title: "The glow-up edit", status: "published", position: 1, data: { brand: "Luminous Skin", category: "Skincare", format: "Aesthetic B-roll", image: "https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=500&q=70" } },
@@ -11,13 +13,24 @@ const sampleItems: Item[] = [
 ];
 
 const nav = ["Overview", "Portfolio", "Case studies", "Brands", "Testimonials", "Inquiries", "Media library", "Site settings"];
+const maxUploadBytes = 20 * 1024 * 1024;
 
 export default function AdminDashboard({ email, name }: { email: string; name: string }) {
   const [tab, setTab] = useState("Overview");
   const [items, setItems] = useState<Item[]>(sampleItems);
+  const [media, setMedia] = useState<MediaAsset[]>([]);
   const [modal, setModal] = useState(false);
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const filteredItems = items.filter((item) => {
+    const matchesSearch = `${item.title} ${item.data.brand ?? ""} ${item.data.category ?? ""}`.toLowerCase().includes(search.toLowerCase());
+    return matchesSearch && (statusFilter === "all" || item.status === statusFilter);
+  });
 
   useEffect(() => {
     fetch("/api/content?type=portfolio")
@@ -27,26 +40,95 @@ export default function AdminDashboard({ email, name }: { email: string; name: s
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (tab !== "Media library") return;
+    setMediaLoading(true);
+    fetch("/api/media")
+      .then((res) => res.ok ? res.json() : Promise.reject())
+      .then((data) => setMedia(data.assets ?? []))
+      .catch(() => setNotice("Media library could not be loaded. Refresh and try again."))
+      .finally(() => setMediaLoading(false));
+  }, [tab]);
+
+  async function uploadMedia(file: File) {
+    if (!file.size) throw new Error("Choose a file first.");
+    if (file.size > maxUploadBytes) throw new Error("Each upload must be 20 MB or smaller.");
+    const response = await fetch(`/api/media?name=${encodeURIComponent(file.name)}`, {
+      method: "POST",
+      headers: { "content-type": file.type || "application/octet-stream" },
+      body: file,
+    });
+    const body = await response.json().catch(() => null) as { url?: string; error?: string } | null;
+    if (!response.ok || !body?.url) throw new Error(body?.error ?? "Upload failed. Try MP4, WebM, JPG or PNG.");
+    return new URL(body.url, window.location.origin).toString();
+  }
+
   async function createItem(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const data = Object.fromEntries(new FormData(event.currentTarget));
-    const item: Item = { id: crypto.randomUUID(), title: String(data.title), status: String(data.status), position: items.length + 1, data: { brand: String(data.brand), category: String(data.category), format: String(data.format), image: String(data.image) || "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=700&q=80" } };
-    const response = await fetch("/api/content", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "portfolio", ...item }) });
-    if (response.ok) { setItems([item, ...items]); setModal(false); setNotice(item.status === "published" ? "Published — it will appear in the public portfolio on refresh." : "Draft saved safely in your workspace."); }
-    else setNotice("Your admin session has expired. Enter your PIN again to continue.");
+    if (saving) return;
+    setSaving(true);
+    setNotice("");
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    try {
+      let image = String(data.get("image") ?? "").trim();
+      let video = String(data.get("video") ?? "").trim();
+      const imageFile = data.get("imageFile");
+      const videoFile = data.get("videoFile");
+      if (imageFile instanceof File && imageFile.size) image = await uploadMedia(imageFile);
+      if (videoFile instanceof File && videoFile.size) video = await uploadMedia(videoFile);
+      if (!image) throw new Error("Add a cover image or choose an image file.");
+      if (video) {
+        try { new URL(video); } catch { throw new Error("Video link must start with https://"); }
+      }
+      const item: Item = {
+        id: crypto.randomUUID(),
+        title: String(data.get("title") ?? "").trim(),
+        status: String(data.get("status") ?? "draft"),
+        position: items.length + 1,
+        data: {
+          brand: String(data.get("brand") ?? "").trim(),
+          category: String(data.get("category") ?? "Beauty"),
+          format: String(data.get("format") ?? "Product Demo"),
+          image,
+          ...(video ? { video } : {}),
+        },
+      };
+      const response = await fetch("/api/content", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "portfolio", ...item }) });
+      const body = await response.json().catch(() => null) as { error?: string } | null;
+      if (!response.ok) throw new Error(body?.error ?? "Could not save this portfolio item.");
+      setItems([item, ...items]);
+      setModal(false);
+      form.reset();
+      setNotice(item.status === "published" ? "Published — it is now live on the website." : "Draft saved. Publish it whenever you are ready.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not save this portfolio item.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function updateStatus(item: Item) {
     const status = item.status === "published" ? "unpublished" : "published";
     const response = await fetch(`/api/content/${item.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status }) });
     if (response.ok) { setItems(items.map((current) => current.id === item.id ? { ...current, status } : current)); setNotice(status === "published" ? "Published to the portfolio." : "Unpublished from the public portfolio."); }
-    else setNotice("Publishing requires an approved admin session.");
+    else setNotice("Your admin session has expired. Enter your PIN again to continue.");
   }
 
-  async function uploadMedia(file: File) {
+  async function handleLibraryUpload(file: File) {
     setNotice(`Uploading ${file.name}…`);
-    const response = await fetch(`/api/media?name=${encodeURIComponent(file.name)}`, { method: "POST", headers: { "content-type": file.type || "application/octet-stream" }, body: file });
-    setNotice(response.ok ? "Uploaded to your media library. Copy the returned URL into a portfolio item." : "Media upload requires an approved admin session.");
+    try {
+      const url = await uploadMedia(file);
+      setNotice("Uploaded. You can now copy its URL or choose it while adding a portfolio item.");
+      setMedia((current) => [{ id: crypto.randomUUID(), key: url, filename: file.name, contentType: file.type, byteSize: file.size, createdAt: new Date().toISOString(), url }, ...current]);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Upload failed. Try again.");
+    }
+  }
+
+  async function copyUrl(url: string) {
+    await navigator.clipboard?.writeText(url);
+    setNotice("Media URL copied. You can paste it into a portfolio item.");
   }
 
   async function lockAdmin() {
@@ -55,14 +137,18 @@ export default function AdminDashboard({ email, name }: { email: string; name: s
   }
 
   return <main className="cms-shell">
-    <aside className="cms-side"><Link href="/" className="wordmark">AURA<span>STUDIO</span></Link><span className="cms-label">Creator CMS</span><nav aria-label="CMS navigation">{nav.map((item) => <button key={item} className={tab === item ? "active" : ""} onClick={() => setTab(item)}>{item === "Overview" ? "⌘" : "○"}<span>{item}</span></button>)}</nav><div className="cms-user"><span>{name.slice(0,1).toUpperCase()}</span><div><b>{name}</b><small>{email}</small></div></div><button className="cms-log-out" onClick={lockAdmin}>Lock admin</button></aside>
+    <aside className="cms-side"><Link href="/" className="wordmark">AURA<span>STUDIO</span></Link><span className="cms-label">Creator CMS</span><nav aria-label="CMS navigation">{nav.map((item) => <button key={item} className={tab === item ? "active" : ""} onClick={() => setTab(item)}>{item === "Overview" ? "⌘" : "○"}<span>{item}</span></button>)}</nav><div className="cms-user"><span>{name.slice(0, 1).toUpperCase()}</span><div><b>{name}</b><small>{email}</small></div></div><button className="cms-log-out" onClick={lockAdmin}>Lock admin</button></aside>
     <section className="cms-main"><header className="cms-top"><div><p className="cms-kicker">{tab === "Overview" ? "Good morning" : "Content manager"}</p><h1>{tab === "Overview" ? "Your studio, at a glance." : tab}</h1></div><div className="cms-top-actions"><a href="/" target="_blank" className="cms-ghost">View website ↗</a><button className="cms-primary" onClick={() => setModal(true)}>+ Add portfolio item</button></div></header>
       {notice && <div className="cms-notice" role="status"><b>Update</b><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
-      {tab === "Overview" ? <><div className="cms-metrics"><Metric value={items.length} label="Portfolio videos" note="Content library"/><Metric value={items.filter((item) => item.status === "published").length} label="Published projects" note="Live on website"/><Metric value="—" label="New inquiries" note="Secure database"/><Metric value="—" label="Media assets" note="R2 storage"/></div><div className="cms-panels"><section className="cms-panel wide"><div className="panel-title"><div><span className="cms-kicker">Portfolio status</span><h2>Recent content</h2></div><button onClick={() => setTab("Portfolio")}>Manage all →</button></div><PortfolioTable items={items.slice(0,4)} onStatus={updateStatus}/></section><section className="cms-panel"><div className="panel-title"><div><span className="cms-kicker">Quick actions</span><h2>Keep moving</h2></div></div><div className="quick-actions"><button onClick={() => setModal(true)}>↗ <span>Add new video</span></button><button onClick={() => setTab("Media library")}>▣ <span>Upload media</span></button><button onClick={() => setTab("Inquiries")}>✦ <span>Review inquiries</span></button><button onClick={() => setTab("Site settings")}>⚙ <span>Update site settings</span></button></div></section></div></> : tab === "Portfolio" ? <section className="cms-panel"><div className="panel-title"><div><span className="cms-kicker">All work</span><h2>Portfolio items</h2></div><button className="cms-primary" onClick={() => setModal(true)}>+ Add item</button></div><div className="cms-filter"><input placeholder="Search portfolio…" aria-label="Search portfolio"/><select defaultValue="all"><option value="all">All statuses</option><option>Published</option><option>Draft</option><option>Unpublished</option></select></div>{loading ? <p className="cms-empty">Loading content…</p> : <PortfolioTable items={items} onStatus={updateStatus}/>}</section> : tab === "Media library" ? <section className="cms-panel media-panel"><div><span className="cms-kicker">Optimised storage</span><h2>Media library</h2><p>Upload a cover image, video or press kit. Large media lives in object storage, never in your website code.</p></div><label className="drop-zone"><input type="file" accept="image/*,video/*,application/pdf" onChange={(event) => event.target.files?.[0] && uploadMedia(event.target.files[0])}/><b>Drop a file here</b><span>or choose from your device</span></label></section> : <section className="cms-panel empty-state"><span>✦</span><h2>{tab} is ready for your content.</h2><p>The shared content model supports drafts, publication, ordering and automatic website updates. Add your first record or connect the production admin allowlist to start managing it securely.</p><button className="cms-primary" onClick={() => setModal(true)}>Create content</button></section>}
+      {tab === "Overview" ? <><div className="cms-metrics"><Metric value={items.length} label="Portfolio videos" note="Content library"/><Metric value={items.filter((item) => item.status === "published").length} label="Published projects" note="Live on website"/><Metric value="—" label="New inquiries" note="Secure database"/><Metric value={media.length || "—"} label="Media assets" note="Images and videos"/></div><div className="cms-panels"><section className="cms-panel wide"><div className="panel-title"><div><span className="cms-kicker">Portfolio status</span><h2>Recent content</h2></div><button onClick={() => setTab("Portfolio")}>Manage all →</button></div><PortfolioTable items={items.slice(0, 4)} onStatus={updateStatus}/></section><section className="cms-panel"><div className="panel-title"><div><span className="cms-kicker">Quick actions</span><h2>Keep moving</h2></div></div><div className="quick-actions"><button onClick={() => setModal(true)}>↗ <span>Add new video</span></button><button onClick={() => setTab("Media library")}>▣ <span>Upload media</span></button><button onClick={() => setTab("Inquiries")}>✦ <span>Review inquiries</span></button><button onClick={() => setTab("Site settings")}>⚙ <span>Update site settings</span></button></div></section></div></> : tab === "Portfolio" ? <section className="cms-panel"><div className="panel-title"><div><span className="cms-kicker">All work</span><h2>Portfolio items</h2></div><button className="cms-primary" onClick={() => setModal(true)}>+ Add item</button></div><div className="cms-filter"><input placeholder="Search title, brand or category…" aria-label="Search portfolio" value={search} onChange={(event) => setSearch(event.target.value)}/><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">All statuses</option><option value="published">Published</option><option value="draft">Draft</option><option value="unpublished">Unpublished</option></select></div>{loading ? <p className="cms-empty">Loading content…</p> : filteredItems.length ? <PortfolioTable items={filteredItems} onStatus={updateStatus}/> : <p className="cms-empty">No matching portfolio items.</p>}</section> : tab === "Media library" ? <MediaLibrary assets={media} loading={mediaLoading} onUpload={handleLibraryUpload} onCopy={copyUrl}/> : <section className="cms-panel empty-state"><span>✦</span><h2>{tab} is ready for your content.</h2><p>Add portfolio work from the button above. Drafts stay private until you publish them.</p><button className="cms-primary" onClick={() => setModal(true)}>Create content</button></section>}
     </section>
-    {modal && <div className="cms-modal" role="dialog" aria-modal="true" aria-label="Add portfolio item"><form onSubmit={createItem}><button type="button" className="cms-close" onClick={() => setModal(false)}>×</button><span className="cms-kicker">New portfolio item</span><h2>Add a beautiful new moment.</h2><label>Title<input name="title" required placeholder="e.g. The glow-up edit" /></label><label>Brand<input name="brand" required placeholder="Brand or client" /></label><div className="cms-two"><label>Category<select name="category" defaultValue="Beauty"><option>Beauty</option><option>Skincare</option><option>Fashion</option><option>Lifestyle</option><option>Wellness</option></select></label><label>Format<select name="format" defaultValue="Product Demo"><option>Product Demo</option><option>Unboxing</option><option>Testimonial</option><option>Voiceover</option><option>Aesthetic B-roll</option></select></label></div><label>Cover image URL<input name="image" type="url" placeholder="https://…" /></label><label>Publishing status<select name="status" defaultValue="draft"><option value="draft">Save as draft</option><option value="published">Publish now</option></select></label><button className="cms-primary" type="submit">Save portfolio item →</button></form></div>}
+    {modal && <div className="cms-modal" role="dialog" aria-modal="true" aria-label="Add portfolio item"><form onSubmit={createItem}><button type="button" className="cms-close" onClick={() => setModal(false)}>×</button><span className="cms-kicker">New portfolio item</span><h2>Add a beautiful new moment.</h2><label>Title<input name="title" required placeholder="e.g. The glow-up edit" /></label><label>Brand<input name="brand" required placeholder="Brand or client" /></label><div className="cms-two"><label>Category<select name="category" defaultValue="Beauty"><option>Beauty</option><option>Skincare</option><option>Fashion</option><option>Lifestyle</option><option>Wellness</option></select></label><label>Format<select name="format" defaultValue="Product Demo"><option>Product Demo</option><option>Unboxing</option><option>Testimonial</option><option>Voiceover</option><option>Aesthetic B-roll</option><option>Try-on</option></select></label></div><label>Cover image URL<input name="image" type="url" placeholder="https://…" /><span className="field-hint">Or upload an image from your device</span><input name="imageFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /></label><label>Video link <span className="field-hint">Direct MP4/WebM, YouTube or Vimeo</span><input name="video" type="url" placeholder="https://…" /><span className="field-hint">Or upload a video (max 20 MB)</span><input name="videoFile" type="file" accept="video/mp4,video/webm" /></label><label>Publishing status<select name="status" defaultValue="draft"><option value="draft">Save as draft</option><option value="published">Publish now</option></select></label><button className="cms-primary" disabled={saving} type="submit">{saving ? "Saving…" : "Save portfolio item →"}</button></form></div>}
   </main>;
 }
 
 function Metric({ value, label, note }: { value: string | number; label: string; note: string }) { return <article className="cms-metric"><strong>{value}</strong><span>{label}</span><small>{note}</small></article>; }
 function PortfolioTable({ items, onStatus }: { items: Item[]; onStatus: (item: Item) => void }) { return <div className="portfolio-table"><div className="table-row table-head"><span>Item</span><span>Status</span><span>Category</span><span /></div>{items.map((item) => <div className="table-row" key={item.id}><span className="table-item">{item.data.image && <img src={item.data.image} alt=""/>}<b>{item.title}<small>{item.data.brand || "Untitled brand"}</small></b></span><span><i className={`status ${item.status}`} />{item.status}</span><span>{item.data.category || "—"}</span><button onClick={() => onStatus(item)}>{item.status === "published" ? "Unpublish" : "Publish"}</button></div>)}</div>; }
+function MediaLibrary({ assets, loading, onUpload, onCopy }: { assets: MediaAsset[]; loading: boolean; onUpload: (file: File) => void; onCopy: (url: string) => void }) {
+  return <section className="cms-panel media-panel"><div><span className="cms-kicker">Optimised storage</span><h2>Media library</h2><p>Upload a cover image or video here. JPG, PNG, MP4 and WebM files up to 20 MB are supported.</p><label className="drop-zone"><input type="file" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm" onChange={(event) => event.target.files?.[0] && onUpload(event.target.files[0])}/><b>Choose image or video</b><span>or drop a file here</span></label></div><div className="media-assets"><div className="panel-title"><div><span className="cms-kicker">Your uploads</span><h2>{assets.length} files</h2></div></div>{loading ? <p className="cms-empty">Loading media…</p> : assets.length ? assets.map((asset) => <div className="media-asset" key={asset.id}><span className="media-asset-icon">{asset.contentType.startsWith("video/") ? "▶" : "▧"}</span><div><b>{asset.filename}</b><small>{formatBytes(asset.byteSize)} · {asset.contentType}</small></div><button onClick={() => onCopy(asset.url)}>Copy URL</button></div>) : <p className="cms-empty">Your uploaded files will appear here.</p>}</div></section>;
+}
+function formatBytes(bytes: number) { if (!bytes) return "—"; if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`; return `${(bytes / (1024 * 1024)).toFixed(1)} MB`; }
