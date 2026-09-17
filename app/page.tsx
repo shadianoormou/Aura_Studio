@@ -9,6 +9,7 @@ type PortfolioItem = {
   category: string;
   format: string;
   image: string;
+  video?: string;
   tint: string;
 };
 
@@ -41,6 +42,30 @@ function Arrow({ diagonal = false }: { diagonal?: boolean }) {
   return <span className={diagonal ? "arrow diagonal" : "arrow"} aria-hidden="true">→</span>;
 }
 
+function embedVideoUrl(value: string) {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.replace(/^www\./, "");
+    if (host === "youtu.be") return `https://www.youtube.com/embed/${url.pathname.slice(1).split("/")[0]}`;
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      const id = url.searchParams.get("v") || url.pathname.match(/\/(?:shorts|embed)\/([^/]+)/)?.[1];
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    if (host === "vimeo.com" || host === "player.vimeo.com") {
+      const id = url.pathname.match(/\/(?:video\/)?(\d+)/)?.[1];
+      return id ? `https://player.vimeo.com/video/${id}` : null;
+    }
+  } catch { return null; }
+  return null;
+}
+
+function PortfolioMedia({ item }: { item: PortfolioItem }) {
+  if (!item.video) return <div className="modal-media"><img src={item.image} alt={`${item.brand} project preview`} /><span className="modal-play">▶</span></div>;
+  const embed = embedVideoUrl(item.video);
+  if (embed) return <div className="modal-media modal-video-embed"><iframe src={embed} title={`${item.title} video`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>;
+  return <div className="modal-media"><video controls playsInline preload="metadata" poster={item.image}><source src={item.video} /></video></div>;
+}
+
 export default function Home() {
   const [filter, setFilter] = useState("All");
   const [selected, setSelected] = useState<PortfolioItem | null>(null);
@@ -55,7 +80,7 @@ export default function Home() {
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
         if (!data?.records?.length) return;
-        const remote = data.records.map((record: { id: string; title: string; data?: PortfolioItem; }) => ({ ...record.data, id: record.id, title: record.title || record.data?.title }));
+        const remote = data.records.map((record: { id: string; title: string; data?: Partial<PortfolioItem>; }, index: number) => ({ ...record.data, id: record.id, title: record.title, image: record.data?.image || starterWork[index % starterWork.length].image, tint: record.data?.tint || starterWork[index % starterWork.length].tint }));
         setWork(remote);
       })
       .catch(() => undefined);
@@ -193,7 +218,7 @@ export default function Home() {
 
       <footer><a href="#top" className="wordmark">AURA<span>STUDIO</span></a><p>Creator-led content for brands with something worth sharing.</p><div><a href="#portfolio">Work</a><a href="#services">Services</a><a href="#contact">Contact</a><a href="/admin">Creator login</a></div><small>© {new Date().getFullYear()} Shadia Noor Mou. Built with intention.</small></footer>
 
-      {selected && <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${selected.title} portfolio preview`} onMouseDown={() => setSelected(null)}><div className="work-modal" onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" aria-label="Close preview" onClick={() => setSelected(null)}>×</button><div className="modal-media"><img src={selected.image} alt={`${selected.brand} project preview`} /><span className="modal-play">▶</span></div><div className="modal-copy"><p className="eyebrow">{selected.brand} · {selected.format}</p><h3>{selected.title}</h3><p>Portfolio preview. Replace with your own hosted video or external URL through the Creator CMS.</p><a href="#contact" className="button" onClick={() => setSelected(null)}>Start a similar project <Arrow /></a></div></div></div>}
+      {selected && <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${selected.title} portfolio preview`} onMouseDown={() => setSelected(null)}><div className="work-modal" onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" aria-label="Close preview" onClick={() => setSelected(null)}>×</button><PortfolioMedia item={selected}/><div className="modal-copy"><p className="eyebrow">{selected.brand} · {selected.format}</p><h3>{selected.title}</h3><p>{selected.video ? "Watch the full portfolio video." : "Add a video link through the Creator CMS to make this preview playable."}</p><a href="#contact" className="button" onClick={() => setSelected(null)}>Start a similar project <Arrow /></a></div></div></div>}
     </main>
   );
 }
