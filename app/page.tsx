@@ -80,6 +80,9 @@ export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [sent, setSent] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [work, setWork] = useState(starterWork);
 
   useEffect(() => {
@@ -158,12 +161,25 @@ export default function Home() {
 
   const visibleWork = useMemo(() => filter === "All" ? work : work.filter((item) => item.category === filter || item.format === filter), [filter, work]);
 
-  function submitInquiry(event: FormEvent<HTMLFormElement>) {
+  async function submitInquiry(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) return;
     const form = new FormData(event.currentTarget);
-    fetch("/api/inquiries", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.fromEntries(form)) }).catch(() => undefined);
-    setSent(true);
-    event.currentTarget.reset();
+    setSubmitting(true);
+    setSent(false);
+    setFormError("");
+    try {
+      const response = await fetch("/api/inquiries", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.fromEntries(form)) });
+      const body = await response.json().catch(() => null) as { accepted?: boolean; emailSent?: boolean; error?: string } | null;
+      if (!response.ok || !body?.accepted) throw new Error(body?.error || "We could not send that inquiry. Please try again.");
+      setEmailSent(Boolean(body.emailSent));
+      setSent(true);
+      event.currentTarget.reset();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "We could not send that inquiry. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -222,7 +238,7 @@ export default function Home() {
 
       <section className="faq section-pad" id="faq"><div className="section-head"><div><p className="eyebrow">Good to know</p><h2>Your questions,<br /><em>answered.</em></h2></div><p>Need something not covered here? I’m happy to talk through the details before we build a brief.</p></div><div className="faq-list">{faq.map(([question, answer], index) => <article key={question} className={openFaq === index ? "faq-item open" : "faq-item"}><button onClick={() => setOpenFaq(openFaq === index ? null : index)} aria-expanded={openFaq === index}><span>{question}</span><b>{openFaq === index ? "−" : "+"}</b></button><div><p>{answer}</p></div></article>)}</div></section>
 
-      <section className="contact section-pad" id="contact"><div className="contact-glow" /><div className="contact-copy"><p className="eyebrow">Start a project</p><h2>Let’s create something worth <em>stopping</em> for.</h2><p>Share a little about what’s on your mind. Shadia usually replies within one business day.</p><a href="mailto:shadia.creates@gmail.com" className="text-link">shadia.creates@gmail.com <Arrow diagonal /></a><p className="contact-location">Bangladesh · 3–5 business day delivery</p></div><form className="inquiry-form" onSubmit={submitInquiry}>{sent && <div className="form-success" role="status"><b>Received beautifully.</b><span>Your inquiry is on its way — I’ll be in touch soon.</span></div>}<label>Name<input name="name" required placeholder="Your name" /></label><label>Brand or company<input name="brand" required placeholder="Brand name" /></label><label>Email<input type="email" name="email" required placeholder="you@brand.com" /></label><label>Project type<select name="projectType" defaultValue=""><option value="" disabled>Select one</option><option>UGC video creation</option><option>Paid social creative</option><option>Product demo or unboxing</option><option>Monthly content</option><option>Something else</option></select></label><label className="form-wide">Tell me about the project<textarea name="message" required placeholder="Goals, timing, deliverables and anything helpful…" rows={4} /></label><button className="button form-wide" type="submit">Send collaboration inquiry <Arrow /></button><p className="form-note">By sending, you agree that Shadia Creates can respond to your inquiry.</p></form></section>
+      <section className="contact section-pad" id="contact"><div className="contact-glow" /><div className="contact-copy"><p className="eyebrow">Start a project</p><h2>Let’s create something worth <em>stopping</em> for.</h2><p>Share a little about what’s on your mind. Shadia usually replies within one business day.</p><a href="mailto:shadia.creates@gmail.com" className="text-link">shadia.creates@gmail.com <Arrow diagonal /></a><p className="contact-location">Bangladesh · 3–5 business day delivery</p></div><form className="inquiry-form" onSubmit={submitInquiry}>{sent && <div className="form-success" role="status"><b>Received beautifully.</b><span>{emailSent ? "Your inquiry was emailed to Shadia." : "Your inquiry is saved securely in the admin inbox."}</span></div>}{formError && <div className="form-error" role="alert">{formError}</div>}<label>Name<input name="name" required placeholder="Your name" /></label><label>Brand or company<input name="brand" required placeholder="Brand name" /></label><label>Email<input type="email" name="email" required placeholder="you@brand.com" /></label><label>Project type<select name="projectType" defaultValue=""><option value="" disabled>Select one</option><option>UGC video creation</option><option>Paid social creative</option><option>Product demo or unboxing</option><option>Monthly content</option><option>Something else</option></select></label><label className="form-wide">Tell me about the project<textarea name="message" required placeholder="Goals, timing, deliverables and anything helpful…" rows={4} /></label><button className="button form-wide" type="submit" disabled={submitting}>{submitting ? "Sending…" : "Send collaboration inquiry"} <Arrow /></button><p className="form-note">By sending, you agree that Shadia Creates can respond to your inquiry.</p></form></section>
 
       <footer><a href="#top" className="wordmark">AURA<span>STUDIO</span></a><p>Creator-led content for brands with something worth sharing.</p><div><a href="#portfolio">Work</a><a href="#services">Services</a><a href="#contact">Contact</a><a href="/admin">Creator login</a></div><small>© {new Date().getFullYear()} Shadia Noor Mou. Built with intention.</small></footer>
 
