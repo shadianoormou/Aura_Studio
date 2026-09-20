@@ -17,12 +17,16 @@ const starterWork: PortfolioItem[] = [
   { id: "glow", title: "The glow-up edit", brand: "Skincare · product story", category: "Skincare", format: "Aesthetic B-roll", image: "https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=900&q=85", tint: "rose" },
   { id: "ritual", title: "Sunday reset", brand: "Self-care · voiceover", category: "Lifestyle", format: "Voiceover", image: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=900&q=85", tint: "lilac" },
   { id: "unboxed", title: "The unboxing feeling", brand: "Beauty · launch story", category: "Beauty", format: "Unboxing", image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=900&q=85", tint: "coral" },
-  { id: "morning", title: "Morning, made easy", brand: "Wellness · product demo", category: "Wellness", format: "Product Demo", image: "https://images.unsplash.com/photo-1547887538-e3a2f32cb1cc?auto=format&fit=crop&w=900&q=85", tint: "cream" },
+  { id: "morning", title: "Morning, made easy", brand: "Wellness · product story", category: "Wellness", format: "Product Story", image: "https://images.unsplash.com/photo-1547887538-e3a2f32cb1cc?auto=format&fit=crop&w=900&q=85", tint: "cream" },
   { id: "soft", title: "Soft tailoring", brand: "Fashion · try-on story", category: "Fashion", format: "Try-on", image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=85", tint: "plum" },
   { id: "matcha", title: "A little ritual", brand: "Lifestyle · ritual story", category: "Lifestyle", format: "Testimonial", image: "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=900&q=85", tint: "sage" },
 ];
 
-const filters = ["All", "Beauty", "Skincare", "Fashion", "Lifestyle", "Wellness", "Product Demo", "Unboxing", "Testimonial", "Voiceover", "Aesthetic B-roll"];
+const filters = ["All", "Beauty", "Skincare", "Fashion", "Lifestyle", "Wellness", "Product Story", "Unboxing", "Testimonial", "Voiceover", "Aesthetic B-roll"];
+
+function formatDisplay(format: string) {
+  return format === "Product Demo" ? "Product Story" : format;
+}
 
 const faq = [
   ["What kinds of brands do you work with?", "I partner with beauty, skincare, fashion, wellness and considered consumer brands that value clear, human storytelling."],
@@ -97,7 +101,7 @@ export default function Home() {
           title: record.title,
           brand: record.data?.brand || "Studio project",
           category: record.data?.category || "Beauty",
-          format: record.data?.format || "Product Demo",
+          format: record.data?.format || "Product Story",
           image: record.data?.image || starterWork[index % starterWork.length].image,
           tint: record.data?.tint || starterWork[index % starterWork.length].tint,
           ...(record.data?.video ? { video: record.data.video } : {}),
@@ -169,7 +173,7 @@ export default function Home() {
     };
   }, []);
 
-  const visibleWork = useMemo(() => filter === "All" ? work : work.filter((item) => item.category === filter || item.format === filter), [filter, work]);
+  const visibleWork = useMemo(() => filter === "All" ? work : work.filter((item) => item.category === filter || formatDisplay(item.format) === filter), [filter, work]);
 
   async function submitInquiry(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -228,7 +232,7 @@ export default function Home() {
 
       <section className="portfolio section-pad" id="portfolio"><div className="section-head"><div><p className="eyebrow">Selected work</p><h2>Built for the <em>scroll.</em><br />Made to <span>stay.</span></h2></div><p>A living edit of organic-feeling content, created with commercial intention.</p></div>
         <div className="filter-row" role="tablist" aria-label="Portfolio filters">{filters.map((item) => <button key={item} role="tab" aria-selected={filter === item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>{item}</button>)}</div>
-        <div className="work-grid">{visibleWork.map((item, index) => <button className={`work-card work-${index % 6}`} key={item.id} onClick={() => setSelected(item)} aria-label={`Watch ${item.title}, ${item.brand}`}><img src={item.image} alt="" /><span className={`wash ${item.tint}`} /><span className="play">▶</span><span className="work-meta"><small>{item.brand} · {item.format}</small><b>{item.title}</b></span></button>)}</div>
+        <div className="work-grid">{visibleWork.map((item, index) => <button className={`work-card work-${index % 6}`} key={item.id} onClick={() => setSelected(item)} aria-label={`Watch ${item.title}, ${item.brand}`}><img src={item.image} alt="" /><span className={`wash ${item.tint}`} /><span className="play">▶</span><span className="work-meta"><small>{item.brand} · {formatDisplay(item.format)}</small><b>{item.title}</b></span></button>)}</div>
         <a className="outline-button" href="#contact">Request the full portfolio <Arrow /></a>
       </section>
 
@@ -248,11 +252,11 @@ export default function Home() {
 
       <section className="faq section-pad" id="faq"><div className="section-head"><div><p className="eyebrow">Good to know</p><h2>Your questions,<br /><em>answered.</em></h2></div><p>Need something not covered here? I’m happy to talk through the details before we build a brief.</p></div><div className="faq-list">{faq.map(([question, answer], index) => <article key={question} className={openFaq === index ? "faq-item open" : "faq-item"}><button onClick={() => setOpenFaq(openFaq === index ? null : index)} aria-expanded={openFaq === index}><span>{question}</span><b>{openFaq === index ? "−" : "+"}</b></button><div><p>{answer}</p></div></article>)}</div></section>
 
-      <section className="contact section-pad" id="contact"><div className="contact-glow" /><div className="contact-copy"><p className="eyebrow">Start a project</p><h2>Let’s create something worth <em>stopping</em> for.</h2><p>Share a little about what’s on your mind. Shadia usually replies within one business day.</p><a href="mailto:shadia.creates@gmail.com" className="text-link">shadia.creates@gmail.com <Arrow diagonal /></a><p className="contact-location">Bangladesh · 3–5 business day delivery</p></div><form className="inquiry-form" onSubmit={submitInquiry}>{sent && <div className="form-success" role="status"><b>Received beautifully.</b><span>{emailSent ? "Your inquiry was emailed to Shadia." : "Your inquiry is saved securely in the admin inbox."}</span></div>}{formError && <div className="form-error" role="alert">{formError}</div>}<label>Name<input name="name" required placeholder="Your name" /></label><label>Brand or company<input name="brand" required placeholder="Brand name" /></label><label>Email<input type="email" name="email" required placeholder="you@brand.com" /></label><label>Project type<select name="projectType" defaultValue=""><option value="" disabled>Select one</option><option>UGC video creation</option><option>Paid social creative</option><option>Product demo or unboxing</option><option>Monthly content</option><option>Something else</option></select></label><label className="form-wide">Tell me about the project<textarea name="message" required placeholder="Goals, timing, deliverables and anything helpful…" rows={4} /></label><button className="button form-wide" type="submit" disabled={submitting}>{submitting ? "Sending…" : "Send collaboration inquiry"} <Arrow /></button><p className="form-note">By sending, you agree that Shadia Creates can respond to your inquiry.</p></form></section>
+      <section className="contact section-pad" id="contact"><div className="contact-glow" /><div className="contact-copy"><p className="eyebrow">Start a project</p><h2>Let’s create something worth <em>stopping</em> for.</h2><p>Share a little about what’s on your mind. Shadia usually replies within one business day.</p><a href="mailto:shadia.creates@gmail.com" className="text-link">shadia.creates@gmail.com <Arrow diagonal /></a><p className="contact-location">Bangladesh · 3–5 business day delivery</p></div><form className="inquiry-form" onSubmit={submitInquiry}>{sent && <div className="form-success" role="status"><b>Received beautifully.</b><span>{emailSent ? "Your inquiry was emailed to Shadia." : "Your inquiry is saved securely in the admin inbox."}</span></div>}{formError && <div className="form-error" role="alert">{formError}</div>}<label>Name<input name="name" required placeholder="Your name" /></label><label>Brand or company<input name="brand" required placeholder="Brand name" /></label><label>Email<input type="email" name="email" required placeholder="you@brand.com" /></label><label>Project type<select name="projectType" defaultValue=""><option value="" disabled>Select one</option><option>UGC video creation</option><option>Paid social creative</option><option>Product storytelling</option><option>Monthly content</option><option>Something else</option></select></label><label className="form-wide">Tell me about the project<textarea name="message" required placeholder="Goals, timing, deliverables and anything helpful…" rows={4} /></label><button className="button form-wide" type="submit" disabled={submitting}>{submitting ? "Sending…" : "Send collaboration inquiry"} <Arrow /></button><p className="form-note">By sending, you agree that Shadia Creates can respond to your inquiry.</p></form></section>
 
       <footer><a href="#top" className="wordmark">AURA<span>STUDIO</span></a><p>Creator-led content for brands with something worth sharing.</p><div><a href="#portfolio">Work</a><a href="#services">Services</a><a href="#contact">Contact</a><a href="/admin">Creator login</a></div><small>© {new Date().getFullYear()} Shadia Noor Mou. Built with intention.</small></footer>
 
-      {selected && <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${selected.title} portfolio preview`} onMouseDown={() => setSelected(null)}><div className="work-modal" onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" aria-label="Close preview" onClick={() => setSelected(null)}>×</button><PortfolioMedia item={selected}/><div className="modal-copy"><p className="eyebrow">{selected.brand} · {selected.format}</p><h3>{selected.title}</h3><p>{selected.video ? "Watch the full portfolio video." : "Add a video link through the Creator CMS to make this preview playable."}</p><a href="#contact" className="button" onClick={() => setSelected(null)}>Start a similar project <Arrow /></a></div></div></div>}
+      {selected && <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${selected.title} portfolio preview`} onMouseDown={() => setSelected(null)}><div className="work-modal" onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" aria-label="Close preview" onClick={() => setSelected(null)}>×</button><PortfolioMedia item={selected}/><div className="modal-copy"><p className="eyebrow">{selected.brand} · {formatDisplay(selected.format)}</p><h3>{selected.title}</h3><p>{selected.video ? "Watch the full portfolio video." : "Add a video link through the Creator CMS to make this preview playable."}</p><a href="#contact" className="button" onClick={() => setSelected(null)}>Start a similar project <Arrow /></a></div></div></div>}
     </main>
   );
 }
