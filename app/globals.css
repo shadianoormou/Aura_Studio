@@ -31,6 +31,7 @@ footer { display:grid; grid-template-columns:1fr 1fr; gap:2rem; max-width:1320px
 
 .form-error { grid-column:1/-1; padding:.7rem .8rem; border-radius:.4rem; color:#7a102f; background:#ffe2e8; font-size:.8rem; }
 .inquiry-list { display:grid; gap:1rem; }
+.inquiry-tools { display:flex; align-items:center; gap:.7rem; }
 .inquiry-card { padding:1.1rem 1.2rem; border:1px solid var(--line); border-radius:.7rem; background:var(--surface); }
 .inquiry-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; }
 .inquiry-card h3 { margin:0; font-family:var(--serif); font-size:1.35rem; }
