@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type PortfolioItem = {
   id: string;
@@ -88,6 +88,8 @@ export default function Home() {
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [work, setWork] = useState(starterWork);
+  const testimonialTrack = useRef<HTMLDivElement>(null);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   useEffect(() => {
     document.body.classList.add("aura-site");
@@ -111,6 +113,32 @@ export default function Home() {
       .catch(() => undefined);
     return () => document.body.classList.remove("aura-site");
   }, []);
+
+  useEffect(() => {
+    const track = testimonialTrack.current;
+    if (!track) return;
+    const advance = () => {
+      if (document.hidden || track.matches(":hover") || track.matches(":focus-within")) return;
+      const next = (activeTestimonial + 1) % 3;
+      track.scrollTo({ left: next * track.clientWidth, behavior: "smooth" });
+      setActiveTestimonial(next);
+    };
+    const timer = window.setInterval(advance, 2000);
+    return () => window.clearInterval(timer);
+  }, [activeTestimonial]);
+
+  function handleTestimonialScroll() {
+    const track = testimonialTrack.current;
+    if (!track || !track.clientWidth) return;
+    setActiveTestimonial(Math.max(0, Math.min(2, Math.round(track.scrollLeft / track.clientWidth))));
+  }
+
+  function goToTestimonial(index: number) {
+    const track = testimonialTrack.current;
+    if (!track) return;
+    track.scrollTo({ left: index * track.clientWidth, behavior: "smooth" });
+    setActiveTestimonial(index);
+  }
 
   useEffect(() => {
     const dismissMenu = () => setMenuOpen(false);
@@ -244,7 +272,7 @@ export default function Home() {
 
       <section className="process section-pad"><div className="process-heading"><p className="eyebrow">A smooth process</p><h2>Clear from<br /><em>first hello</em> to final file.</h2></div><ol className="process-list"><li><b>01</b><span>Inquiry</span><p>Goals, deliverables and fit.</p></li><li><b>02</b><span>Creative direction</span><p>Hooks, concept and shot plan.</p></li><li><b>03</b><span>Production</span><p>Thoughtful filming and editing.</p></li><li><b>04</b><span>Delivery</span><p>Polished files in 3–5 business days.</p></li></ol></section>
 
-      <section className="testimonial section-pad"><div className="testimonial-heading"><p className="eyebrow">Client feedback</p><h2>Good work leaves<br /><em>a feeling.</em></h2></div><div className="testimonial-grid"><article className="client-quote"><div className="quote-mark">“</div><blockquote>Shadia understood the brief quickly and made our skincare story feel warm, clear and easy to believe in.</blockquote><div className="quote-by"><span>Beauty brand partner</span><b>Skincare · product education</b></div></article><article className="client-quote"><div className="quote-mark">“</div><blockquote>The final edit felt native to the feed from the very first frame. It gave our launch the calm, polished energy we wanted.</blockquote><div className="quote-by"><span>Wellness brand partner</span><b>Launch story · paid social</b></div></article><article className="client-quote"><div className="quote-mark">“</div><blockquote>Thoughtful direction, beautiful details and a delivery that was ready to use. The content made our product feel considered.</blockquote><div className="quote-by"><span>Fashion brand partner</span><b>Try-on story · UGC video</b></div></article></div></section>
+      <section className="testimonial section-pad"><div className="testimonial-heading"><p className="eyebrow">Client feedback</p><h2>Good work leaves<br /><em>a feeling.</em></h2></div><div className="testimonial-grid" ref={testimonialTrack} onScroll={handleTestimonialScroll} aria-label="Client feedback carousel"><article className="client-quote"><div className="quote-mark">“</div><blockquote>Shadia understood the brief quickly and made our skincare story feel warm, clear and easy to believe in.</blockquote><div className="quote-by"><span>Beauty brand partner</span><b>Skincare · product education</b></div></article><article className="client-quote"><div className="quote-mark">“</div><blockquote>The final edit felt native to the feed from the very first frame. It gave our launch the calm, polished energy we wanted.</blockquote><div className="quote-by"><span>Wellness brand partner</span><b>Launch story · paid social</b></div></article><article className="client-quote"><div className="quote-mark">“</div><blockquote>Thoughtful direction, beautiful details and a delivery that was ready to use. The content made our product feel considered.</blockquote><div className="quote-by"><span>Fashion brand partner</span><b>Try-on story · UGC video</b></div></article></div><div className="quote-progress" aria-label="Choose client feedback"><button type="button" aria-label="Show first client feedback" className={activeTestimonial === 0 ? "active" : ""} onClick={() => goToTestimonial(0)} /><button type="button" aria-label="Show second client feedback" className={activeTestimonial === 1 ? "active" : ""} onClick={() => goToTestimonial(1)} /><button type="button" aria-label="Show third client feedback" className={activeTestimonial === 2 ? "active" : ""} onClick={() => goToTestimonial(2)} /></div></section>
 
       <section className="media-kit section-pad"><div className="kit-card"><div><p className="eyebrow">The media kit</p><h2>Everything your team needs, in one <em>beautiful</em> place.</h2><p>Audience details, collaboration formats and a clear way to get in touch — prepared for beauty, fashion, wellness and lifestyle brands.</p><a className="button" href="#contact">Request media kit <Arrow /></a></div><aside><span>CREATOR<br />PROFILE</span><b>SHADIA<span>°</span></b><small>Beauty · Fashion · Wellness<br />Bangladesh / available worldwide</small><i>✦</i></aside></div></section>
 

@@ -341,3 +341,18 @@ body.aura-site .nav { overflow:visible; }
 .table-actions { display:flex; justify-content:flex-end; gap:.35rem; }.table-actions button { padding:.4rem .55rem; border:1px solid #e9d7e1; border-radius:.35rem; color:#8d3b64; background:#fff; font-size:.67rem; }.table-actions button:hover { border-color:#df8db6; background:#fff4f8; }.table-actions .table-delete { color:#a52859; }
 .cms-mobile-add { display:none; }
 @media (max-width:580px) { .cms-mobile-add { display:flex; width:100%; min-height:44px; align-items:center; justify-content:center; margin:-.8rem 0 1rem; border:1px solid #dc2878; border-radius:.45rem; color:#fff; background:#df287a; font-size:.8rem; font-weight:600; box-shadow:0 6px 16px rgba(205,21,105,.18); }.table-actions { flex-wrap:wrap; justify-content:flex-start; } }
+
+/* Client feedback carousel: one readable card per page on every viewport. */
+body.aura-site .testimonial-grid { display:flex; max-width:1320px; margin:0 auto; gap:1rem; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; scroll-behavior:smooth; scrollbar-width:thin; scrollbar-color:rgba(255,192,221,.65) transparent; -webkit-overflow-scrolling:touch; touch-action:pan-x; }
+body.aura-site .testimonial-grid::-webkit-scrollbar { height:6px; }
+body.aura-site .testimonial-grid::-webkit-scrollbar-track { background:transparent; }
+body.aura-site .testimonial-grid::-webkit-scrollbar-thumb { border-radius:999px; background:rgba(255,192,221,.65); }
+body.aura-site .client-quote { flex:0 0 100%; min-height:285px; scroll-snap-align:start; }
+body.aura-site .quote-progress { display:flex; justify-content:center; gap:.5rem; margin:1.8rem auto 0; }
+body.aura-site .quote-progress button { width:30px; height:4px; padding:0; border:0; border-radius:999px; background:rgba(255,255,255,.3); cursor:pointer; transition:width .25s ease, background .25s ease; }
+body.aura-site .quote-progress button:hover { background:rgba(255,255,255,.7); }
+body.aura-site .quote-progress button.active { width:52px; background:#ffc0dd; }
+@media (max-width:640px) {
+  body.aura-site .testimonial-grid { gap:.75rem; margin-left:-1.2rem; margin-right:-1.2rem; padding:0 1.2rem .45rem; }
+  body.aura-site .client-quote { flex-basis:100%; min-height:260px; }
+}
