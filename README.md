@@ -1,3 +1,16 @@
+# Aura Studio
+
+Premium UGC creator portfolio and content studio CMS.
+
+## Live links
+
+- **Website:** [aura-studio.minhazulshaoun.chatgpt.site](https://aura-studio.minhazulshaoun.chatgpt.site)
+- **Admin panel:** [aura-studio.minhazulshaoun.chatgpt.site/admin](https://aura-studio.minhazulshaoun.chatgpt.site/admin)
+
+The public contact form saves inquiries to the admin panel under **Inquiries**.
+
+---
+
 # vinext-starter
 
 A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and Drizzle support.
