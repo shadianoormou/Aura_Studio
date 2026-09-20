@@ -342,6 +342,37 @@ body.aura-site .nav { overflow:visible; }
 .cms-mobile-add { display:none; }
 @media (max-width:580px) { .cms-mobile-add { display:flex; width:100%; min-height:44px; align-items:center; justify-content:center; margin:-.8rem 0 1rem; border:1px solid #dc2878; border-radius:.45rem; color:#fff; background:#df287a; font-size:.8rem; font-weight:600; box-shadow:0 6px 16px rgba(205,21,105,.18); }.table-actions { flex-wrap:wrap; justify-content:flex-start; } }
 
+/* Editorial work grid: varied card proportions with a gentle living motion. */
+@media (min-width:901px) {
+  body.aura-site .work-grid { grid-template-columns:repeat(12,1fr); align-items:stretch; }
+  body.aura-site .work-card:nth-child(1) { grid-column:span 5; min-height:560px; }
+  body.aura-site .work-card:nth-child(2) { grid-column:span 3; min-height:320px; }
+  body.aura-site .work-card:nth-child(3) { grid-column:span 4; min-height:430px; }
+  body.aura-site .work-card:nth-child(4) { grid-column:span 4; min-height:360px; }
+  body.aura-site .work-card:nth-child(5) { grid-column:span 3; min-height:300px; }
+  body.aura-site .work-card:nth-child(6) { grid-column:span 5; min-height:500px; }
+}
+@media (max-width:900px) {
+  body.aura-site .work-card:nth-child(1) { grid-column:span 2; min-height:420px; }
+  body.aura-site .work-card:nth-child(2) { grid-column:span 1; min-height:280px; }
+  body.aura-site .work-card:nth-child(3) { grid-column:span 1; min-height:320px; }
+  body.aura-site .work-card:nth-child(4) { grid-column:span 2; min-height:390px; }
+  body.aura-site .work-card:nth-child(5) { grid-column:span 1; min-height:280px; }
+  body.aura-site .work-card:nth-child(6) { grid-column:span 1; min-height:330px; }
+}
+@keyframes work-card-float {
+  0%, 100% { transform:translateY(0) rotate(0deg); }
+  50% { transform:translateY(-5px) rotate(.18deg); }
+}
+body.aura-site .work-card { will-change:transform; animation:work-card-float 7s ease-in-out infinite; }
+body.aura-site .work-card:nth-child(2) { animation-delay:-1.4s; }
+body.aura-site .work-card:nth-child(3) { animation-delay:-2.8s; }
+body.aura-site .work-card:nth-child(4) { animation-delay:-4.2s; }
+body.aura-site .work-card:nth-child(5) { animation-delay:-5.6s; }
+body.aura-site .work-card:nth-child(6) { animation-delay:-3.5s; }
+body.aura-site .work-card:hover { animation-play-state:paused; transform:translateY(-10px) scale(1.012); }
+@media (prefers-reduced-motion:reduce) { body.aura-site .work-card { animation:none; } }
+
 /* Client feedback carousel: one readable card per page on every viewport. */
 body.aura-site .testimonial-grid { display:flex; max-width:1320px; margin:0 auto; gap:1rem; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; scroll-behavior:smooth; scrollbar-width:thin; scrollbar-color:rgba(255,192,221,.65) transparent; -webkit-overflow-scrolling:touch; touch-action:pan-x; }
 body.aura-site .testimonial-grid::-webkit-scrollbar { height:6px; }
