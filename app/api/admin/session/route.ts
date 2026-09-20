@@ -7,7 +7,8 @@ import {
 export async function POST(request: Request) {
   let pin: unknown;
   try {
-    ({ pin } = await request.json());
+    const body = await request.json() as { pin?: unknown };
+    pin = body.pin;
   } catch {
     return Response.json({ error: "Enter your admin PIN." }, { status: 400 });
   }

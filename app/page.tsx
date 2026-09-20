@@ -90,8 +90,18 @@ export default function Home() {
     fetch("/api/content?type=portfolio&status=published")
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
-        if (!data?.records?.length) return;
-        const remote = data.records.map((record: { id: string; title: string; data?: Partial<PortfolioItem>; }, index: number) => ({ ...record.data, id: record.id, title: record.title, image: record.data?.image || starterWork[index % starterWork.length].image, tint: record.data?.tint || starterWork[index % starterWork.length].tint }));
+        const records = (data as { records?: Array<{ id: string; title: string; data?: Partial<PortfolioItem> }> } | null)?.records;
+        if (!records?.length) return;
+        const remote: PortfolioItem[] = records.map((record, index) => ({
+          id: record.id,
+          title: record.title,
+          brand: record.data?.brand || "Studio project",
+          category: record.data?.category || "Beauty",
+          format: record.data?.format || "Product Demo",
+          image: record.data?.image || starterWork[index % starterWork.length].image,
+          tint: record.data?.tint || starterWork[index % starterWork.length].tint,
+          ...(record.data?.video ? { video: record.data.video } : {}),
+        }));
         setWork(remote);
       })
       .catch(() => undefined);

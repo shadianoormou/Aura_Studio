@@ -86,7 +86,10 @@ export default function AdminDashboard({ email, name }: { email: string; name: s
   useEffect(() => {
     fetch("/api/content?type=portfolio")
       .then((res) => res.ok ? res.json() : Promise.reject())
-      .then((data) => data.records?.length && setItems(data.records))
+      .then((data) => {
+        const body = data as { records?: Item[] };
+        if (body.records?.length) setItems(body.records);
+      })
       .catch(() => undefined)
       .finally(() => setLoading(false));
   }, []);
@@ -96,7 +99,7 @@ export default function AdminDashboard({ email, name }: { email: string; name: s
     setMediaLoading(true);
     fetch("/api/media")
       .then((res) => res.ok ? res.json() : Promise.reject())
-      .then((data) => setMedia(data.assets ?? []))
+      .then((data) => setMedia((data as { assets?: MediaAsset[] }).assets ?? []))
       .catch(() => setNotice("Media library could not be loaded. Refresh and try again."))
       .finally(() => setMediaLoading(false));
   }, [tab]);

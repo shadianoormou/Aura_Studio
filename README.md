@@ -9,6 +9,16 @@ Premium UGC creator portfolio and content studio CMS.
 
 The public contact form saves inquiries to the admin panel under **Inquiries**.
 
+## Vercel deployment
+
+This repo includes a Vercel build path (`npm run build:vercel`) that keeps the same public website and `/admin` panel. Before the first Vercel deployment, add these Project Environment Variables:
+
+- `ADMIN_PIN` — the private PIN for `/admin`
+- `POSTGRES_URL` — a Vercel Postgres/Neon connection string for portfolio records and inquiries
+- `BLOB_READ_WRITE_TOKEN` — a Vercel Blob token for image/video uploads
+
+Optional contact email delivery uses `RESEND_API_KEY`, `CONTACT_EMAIL`, and `CONTACT_FROM_EMAIL`. Without those optional variables, inquiries still remain available in the admin inbox.
+
 ---
 
 # vinext-starter
