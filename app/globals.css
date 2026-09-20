@@ -353,6 +353,9 @@ body.aura-site .nav { overflow:visible; }
   body.aura-site .work-card:nth-child(6) { grid-column:span 5; height:500px; }
 }
 @media (max-width:900px) {
+  /* Keep tablet layouts readable: the 12-column desktop grid would make
+     each card unnaturally narrow around phone/tablet widths. */
+  body.aura-site .work-grid { grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-flow:row; }
   body.aura-site .work-card:nth-child(1) { grid-column:span 2; height:420px; }
   body.aura-site .work-card:nth-child(2) { grid-column:span 1; height:280px; }
   body.aura-site .work-card:nth-child(3) { grid-column:span 1; height:320px; }
