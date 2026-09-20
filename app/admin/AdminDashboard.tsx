@@ -7,6 +7,8 @@ type ItemData = { brand?: string; category?: string; format?: string; image?: st
 type Item = { id: string; title: string; status: string; position: number; data: ItemData };
 type MediaAsset = { id: string; key: string; filename: string; contentType: string; byteSize: number; createdAt: string; url: string };
 type Inquiry = { id: string; name: string; brand?: string | null; email: string; projectType?: string | null; message: string; status: string; createdAt: string };
+type ImageSource = "phone" | "url" | "drive";
+type VideoSource = "none" | "phone" | "url" | "drive" | "instagram";
 
 const sampleItems: Item[] = [
   { id: "demo-1", title: "The glow-up edit", status: "published", position: 1, data: { brand: "Luminous Skin", category: "Skincare", format: "Aesthetic B-roll", image: "https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=500&q=70" } },
@@ -56,6 +58,8 @@ export default function AdminDashboard({ email, name }: { email: string; name: s
   const [statusFilter, setStatusFilter] = useState("all");
   const [prefillMedia, setPrefillMedia] = useState<MediaAsset | null>(null);
   const [recentMedia, setRecentMedia] = useState<MediaAsset | null>(null);
+  const [imageSource, setImageSource] = useState<ImageSource>("phone");
+  const [videoSource, setVideoSource] = useState<VideoSource>("none");
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [inquiriesLoading, setInquiriesLoading] = useState(false);
 
@@ -75,6 +79,8 @@ export default function AdminDashboard({ email, name }: { email: string; name: s
 
   function openNewItem(asset?: MediaAsset) {
     setPrefillMedia(asset ?? null);
+    setImageSource(asset && !asset.contentType.startsWith("video/") ? "url" : "phone");
+    setVideoSource(asset?.contentType.startsWith("video/") ? "url" : "none");
     setModal(true);
   }
 
@@ -131,26 +137,26 @@ export default function AdminDashboard({ email, name }: { email: string; name: s
     try {
       let image = String(data.get("image") ?? "").trim();
       let video = String(data.get("video") ?? "").trim();
-      const imageSource = String(data.get("imageSource") ?? "url");
-      const videoSource = String(data.get("videoSource") ?? "none");
+      const selectedImageSource = String(data.get("imageSource") ?? imageSource) as ImageSource;
+      const selectedVideoSource = String(data.get("videoSource") ?? videoSource) as VideoSource;
       const imageFile = data.get("imageFile");
       const videoFile = data.get("videoFile");
-      if (imageSource === "phone" && imageFile instanceof File && imageFile.size) image = await uploadMedia(imageFile);
-      if (imageSource === "drive") image = driveImageUrl(image) ?? "";
-      if (videoSource === "none") video = "";
-      if (videoSource === "phone" && videoFile instanceof File && videoFile.size) video = await uploadMedia(videoFile);
-      if (videoSource === "drive") video = driveVideoUrl(video) ?? "";
-      if (videoSource === "instagram") video = instagramPostUrl(video) ?? "";
+      if (selectedImageSource === "phone" && imageFile instanceof File && imageFile.size) image = await uploadMedia(imageFile);
+      if (selectedImageSource === "drive") image = driveImageUrl(image) ?? "";
+      if (selectedVideoSource === "none") video = "";
+      if (selectedVideoSource === "phone" && videoFile instanceof File && videoFile.size) video = await uploadMedia(videoFile);
+      if (selectedVideoSource === "drive") video = driveVideoUrl(video) ?? "";
+      if (selectedVideoSource === "instagram") video = instagramPostUrl(video) ?? "";
       if (!image) throw new Error("Add a cover image or choose an image file.");
-      if (imageSource === "drive" && !image) throw new Error("Paste a Google Drive file link for the cover image.");
-      if (image && imageSource !== "phone") {
+      if (selectedImageSource === "drive" && !image) throw new Error("Paste a Google Drive file link for the cover image.");
+      if (image && selectedImageSource !== "phone") {
         try { new URL(image); } catch { throw new Error("Cover image link must start with https://"); }
       }
       if (video) {
         try { new URL(video); } catch { throw new Error("Video link must start with https://"); }
       }
-      if (videoSource === "drive" && !video) throw new Error("Paste a Google Drive file link for the video.");
-      if (videoSource === "instagram" && !video) throw new Error("Use a public Instagram post, reel or TV link—not a profile link.");
+      if (selectedVideoSource === "drive" && !video) throw new Error("Paste a Google Drive file link for the video.");
+      if (selectedVideoSource === "instagram" && !video) throw new Error("Use a public Instagram post, reel or TV link—not a profile link.");
       const item: Item = {
         id: crypto.randomUUID(),
         title: String(data.get("title") ?? "").trim(),
@@ -165,12 +171,14 @@ export default function AdminDashboard({ email, name }: { email: string; name: s
         },
       };
       const response = await fetch("/api/content", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "portfolio", ...item }) });
-      const body = await response.json().catch(() => null) as { error?: string } | null;
+      const body = await response.json().catch(() => null) as { record?: Item; error?: string } | null;
       if (!response.ok) throw new Error(body?.error ?? "Could not save this portfolio item.");
-      setItems([item, ...items]);
+      setItems([body?.record ?? item, ...items]);
       setModal(false);
       setPrefillMedia(null);
       setRecentMedia(null);
+      setImageSource("phone");
+      setVideoSource("none");
       form.reset();
       setNotice(item.status === "published" ? "Published — it is now live on the website." : "Draft saved. Publish it whenever you are ready.");
     } catch (error) {
@@ -227,7 +235,7 @@ export default function AdminDashboard({ email, name }: { email: string; name: s
       {notice && <div className="cms-notice" role="status"><b>Update</b><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
       {tab === "Overview" ? <><div className="cms-metrics"><Metric value={items.length} label="Portfolio videos" note="Content library"/><Metric value={items.filter((item) => item.status === "published").length} label="Published projects" note="Live on website"/><Metric value={inquiries.length || "—"} label="New inquiries" note="Secure database"/><Metric value={media.length || "—"} label="Media assets" note="Images and videos"/></div><div className="cms-panels"><section className="cms-panel wide"><div className="panel-title"><div><span className="cms-kicker">Portfolio status</span><h2>Recent content</h2></div><button onClick={() => setTab("Portfolio")}>Manage all →</button></div><PortfolioTable items={items.slice(0, 4)} onStatus={updateStatus} onDelete={deleteItem}/></section><section className="cms-panel"><div className="panel-title"><div><span className="cms-kicker">Quick actions</span><h2>Keep moving</h2></div></div><div className="quick-actions"><button onClick={() => openNewItem()}>↗ <span>Add new video</span></button><button onClick={() => setTab("Media library")}>▣ <span>Upload media</span></button><button onClick={() => setTab("Inquiries")}>✦ <span>Review inquiries</span></button><button onClick={() => setTab("Site settings")}>⚙ <span>Update site settings</span></button></div></section></div></> : tab === "Portfolio" ? <section className="cms-panel"><div className="panel-title"><div><span className="cms-kicker">All work</span><h2>Portfolio items</h2></div><button className="cms-primary" onClick={() => openNewItem()}>+ Add item</button></div><div className="cms-filter"><input placeholder="Search title, brand or category…" aria-label="Search portfolio" value={search} onChange={(event) => setSearch(event.target.value)}/><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">All statuses</option><option value="published">Published</option><option value="draft">Draft</option><option value="unpublished">Unpublished</option></select></div>{loading ? <p className="cms-empty">Loading content…</p> : filteredItems.length ? <PortfolioTable items={filteredItems} onStatus={updateStatus} onDelete={deleteItem}/> : <p className="cms-empty">No matching portfolio items.</p>}</section> : tab === "Inquiries" ? <InquiryList inquiries={inquiries} loading={inquiriesLoading} onRefresh={loadInquiries}/> : tab === "Media library" ? <MediaLibrary assets={media} recent={recentMedia} loading={mediaLoading} onUpload={handleLibraryUpload} onCopy={copyUrl} onUse={openNewItem}/> : <section className="cms-panel empty-state"><span>✦</span><h2>{tab} is ready for your content.</h2><p>Add portfolio work from the button above. Drafts stay private until you publish them.</p><button className="cms-primary" onClick={() => openNewItem()}>Create content</button></section>}
     </section>
-    {modal && <div className="cms-modal" role="dialog" aria-modal="true" aria-label="Add portfolio item"><form key={prefillMedia?.id ?? "new"} onSubmit={createItem}><button type="button" className="cms-close" onClick={() => { setModal(false); setPrefillMedia(null); }}>×</button><span className="cms-kicker">New portfolio item</span><h2>{prefillMedia ? "Now choose how it appears." : "Add a beautiful new moment."}</h2><label>Title<input name="title" required placeholder="e.g. The glow-up edit" /></label><label>Brand<input name="brand" required placeholder="Brand or client" /></label><div className="cms-two"><label>Category<select name="category" defaultValue="Beauty"><option>Beauty</option><option>Skincare</option><option>Fashion</option><option>Lifestyle</option><option>Wellness</option></select></label><label>Format<select name="format" defaultValue="Product Demo"><option>Product Demo</option><option>Unboxing</option><option>Testimonial</option><option>Voiceover</option><option>Aesthetic B-roll</option><option>Try-on</option></select></label></div><label>Cover image source<select name="imageSource" defaultValue={prefillMedia && !prefillMedia.contentType.startsWith("video/") ? "url" : "phone"}><option value="phone">Upload from phone</option><option value="url">Image URL</option><option value="drive">Google Drive link</option></select><input name="image" type="text" defaultValue={prefillMedia && !prefillMedia.contentType.startsWith("video/") ? prefillMedia.url : ""} placeholder="Paste image URL or Drive link" /><input name="imageFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /><span className="field-hint">Phone: choose a JPG, PNG, WebP or AVIF file. Drive: set sharing to “Anyone with the link”.</span></label><label>Video source<select name="videoSource" defaultValue={prefillMedia?.contentType.startsWith("video/") ? "url" : "none"}><option value="none">No video</option><option value="phone">Upload from phone</option><option value="url">Direct / YouTube / Vimeo URL</option><option value="drive">Google Drive link</option><option value="instagram">Instagram post or reel URL</option></select><input name="video" type="text" defaultValue={prefillMedia?.contentType.startsWith("video/") ? prefillMedia.url : ""} placeholder="Paste the selected source link" /><input name="videoFile" type="file" accept="video/mp4,video/webm" /><span className="field-hint">Instagram must be a public post/reel/TV link (not a profile or story). Videos up to 20 MB.</span></label><label>Publishing status<select name="status" defaultValue="draft"><option value="draft">Save as draft</option><option value="published">Publish now</option></select></label><button className="cms-primary" disabled={saving} type="submit">{saving ? "Saving…" : "Save portfolio item →"}</button></form></div>}
+    {modal && <div className="cms-modal" role="dialog" aria-modal="true" aria-label="Add portfolio item"><form key={prefillMedia?.id ?? "new"} onSubmit={createItem}><button type="button" className="cms-close" onClick={() => { setModal(false); setPrefillMedia(null); }}>×</button><span className="cms-kicker">New portfolio item</span><h2>{prefillMedia ? "Now choose how it appears." : "Add a beautiful new moment."}</h2><label>Title<input name="title" required placeholder="e.g. The glow-up edit" /></label><label>Brand<input name="brand" required placeholder="Brand or client" /></label><div className="cms-two"><label>Category<select name="category" defaultValue="Beauty"><option>Beauty</option><option>Skincare</option><option>Fashion</option><option>Lifestyle</option><option>Wellness</option></select></label><label>Format<select name="format" defaultValue="Product Demo"><option>Product Demo</option><option>Unboxing</option><option>Testimonial</option><option>Voiceover</option><option>Aesthetic B-roll</option><option>Try-on</option></select></label></div><label>Cover image source<select name="imageSource" value={imageSource} onChange={(event) => setImageSource(event.target.value as ImageSource)}><option value="phone">Upload from phone</option><option value="url">Image URL</option><option value="drive">Google Drive link</option></select>{imageSource === "phone" ? <input name="imageFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /> : <input name="image" type="url" defaultValue={prefillMedia && !prefillMedia.contentType.startsWith("video/") ? prefillMedia.url : ""} placeholder={imageSource === "drive" ? "Paste Google Drive file link" : "https://…"} />}{imageSource === "phone" ? <span className="field-hint">Choose a JPG, PNG, WebP or AVIF file from your device.</span> : <span className="field-hint">{imageSource === "drive" ? "Set the Drive file to “Anyone with the link” before saving." : "Use a direct https:// image link."}</span>}</label><label>Video source<select name="videoSource" value={videoSource} onChange={(event) => setVideoSource(event.target.value as VideoSource)}><option value="none">No video</option><option value="phone">Upload from phone</option><option value="url">Direct / YouTube / Vimeo URL</option><option value="drive">Google Drive link</option><option value="instagram">Instagram post or reel URL</option></select>{videoSource === "phone" ? <input name="videoFile" type="file" accept="video/mp4,video/webm" /> : videoSource !== "none" ? <input name="video" type="url" defaultValue={prefillMedia?.contentType.startsWith("video/") ? prefillMedia.url : ""} placeholder={videoSource === "instagram" ? "https://www.instagram.com/reel/…" : "Paste the selected source link"} /> : null}<span className="field-hint">{videoSource === "instagram" ? "Use a public Instagram post, reel or TV link—not a profile or story." : videoSource === "phone" ? "MP4 or WebM video up to 20 MB." : videoSource === "none" ? "You can add a video later from the portfolio list." : "YouTube, Vimeo, Drive or direct https:// video links are supported."}</span></label><label>Publishing status<select name="status" defaultValue="draft"><option value="draft">Save as draft</option><option value="published">Publish now</option></select></label><button className="cms-primary" disabled={saving} type="submit">{saving ? "Saving…" : "Save portfolio item →"}</button></form></div>}
   </main>;
 }
 
