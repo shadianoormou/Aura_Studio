@@ -1,6 +1,6 @@
 # Aura Studio
 
-Aura Studio is a polished, client-ready portfolio website created for **Shadia Noor Mou**, a Bangladesh-based UGC (user-generated content) creator working across beauty, skincare, fashion, wellness, and lifestyle.
+Aura Studio is a polished, client-ready portfolio website created for a Bangladesh-based UGC (user-generated content) creator working across beauty, skincare, fashion, wellness, and lifestyle.
 
 The project combines a public-facing portfolio with a private creator CMS. Visitors can explore selected work and send collaboration inquiries, while the owner can manage portfolio content, media, publishing status, and inquiries from one protected admin panel.
 
